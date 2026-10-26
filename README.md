@@ -1,0 +1,131 @@
+# Tabular foundation models for predicting distributions from presence-only records
+
+Code and result tables for
+
+> Doi H, Osawa T, Tsutsumida N. *Tabular foundation models for predicting distributions from presence-only records: evidence from real and virtual species.* (in review)
+
+The study evaluates the tabular foundation models TabPFN 3.5, TabPFN 2.5 and TabICL as presence-only distribution models. It uses the NCEAS benchmark (Elith et al. 2020): 225 species in six regions, evaluated on independent presence–absence surveys. The protocol follows Valavi et al. (2022, *Ecol. Monogr.* 92:e01486), so the results can be compared directly with their 21 modelling approaches. The study also covers:
+
+- **Fine-tuning** of TabPFN 3.5. The main design is leave-one-region-out (LORO), so a region's model never sees data from that region. Alternative strategies and a species-split control are also included.
+- **Spatially separated evaluation** with the blocks and target-group background of Valavi et al. (2023, *Glob. Ecol. Biogeogr.* 32:369–383).
+- **Virtual species** with known truth: 120 species, each with 10, 30, 100 or 300 presence records, with and without environmental sampling bias. Half have additive and half have complex species–environment relationships.
+
+## Contents
+
+| Step | Script | Output | Paper |
+|---|---|---|---|
+| Shared settings | `valavi_config.py` | regions, covariates, categorical covariates | Methods |
+| Metrics and statistics | `valavi_stats.py` | AUC-ROC, AUC-PRG, COR, Friedman aligned ranks with Shaffer post hoc | Methods |
+| Data | `get_data.py`, `make_background.py` | `data/` (50,000 random background points per region) | Methods |
+| Reference models (R) | `R/valavi_models.R`, `run_valavi_r.py`, `fix_maxnet.py` | `results/v40/results_r.csv` | GAM, Lasso, BRT, RF, RF down-sampled, MaxNet, MaxEnt, Ensemble |
+| Python models | `benchmark_v40_valavi.py` | `results/v40/results_<tag>.csv` | XGBoost, TabPFN 3.5/2.5 (Fast, Stable), TabICL, TabPFN 3.5-FT |
+| Ensembles with TabPFN | `make_ensembles.py` | `results/v40/results_derived.csv` | SI |
+| Bagging configurations | `tune_tabpfn.py` | `results/v40/tuning/tune.csv` | SI (bagging table) |
+| LORO fine-tuning | `finetune_sdm.py` | `results/v40/finetune/finetune_results.csv` and checkpoints | Main FT model |
+| Other fine-tuning strategies | `finetune_pa.py`, `nested_pa.py`, `finetune_vs.py`, `ens_ft.py` | `results/v40/finetune/finetune_*_results.csv` | Fine-tuning figure, SI |
+| Species-split control | `finetune_species_split.py`, `analyse_species_split.py` | `results/v40/finetune/finetune_species_split_results.csv`, `results/v40/review/species_split_*.csv` | Leakage test |
+| Spatial evaluation | `spatial_cv.py`, `plot_v50.py` | `results/v50/results_{r,gpu}.csv` | Spatial-CV figure (SI) |
+| Virtual species | `vs_benchmark.py`, `vs_bg5_summary.py`, `vs_figures.py` | `results/v60` (additive), `results/v61` (complex) | Virtual-species figure, SI |
+| Main figures | `make_main_figs.py` | `figures/main`, `figures/supp` | Figs 1, 2 and 4; calibration, species-level and spatial-CV SI figures |
+| Benchmark figures | `plot_v40.py`, `plot_ft_strategies.py` | `figures/v40` | Replication check, ranks, post hoc P values and other SI figures |
+| Map | `make_map_nz30.py` | `figures/v40` | New Zealand map (SI) |
+| Robustness analyses | `robustness_1.py`, `robustness_2.py`, `robustness_3.py` | `results/v40/review/*.csv`, `results/v60/envelope.csv` | Bootstrap and mixed-model uncertainty, calibration slopes, categorical coding, sample size, envelope analysis |
+| Published values | `reference/valavi2022_fig10_auc_by_region.csv` | | Regional AUC of Valavi et al. (2022, Fig. 10) |
+| Compute time, strategies | `tables/` | | SI tables |
+
+`results/` holds the per-species result tables for every model and analysis in the paper. With these tables, `make_main_figs.py`, `plot_v40.py`, `plot_v50.py`, `plot_ft_strategies.py` and `analyse_species_split.py` run without a GPU or the input data. The calibration slopes, the robustness analyses and the virtual-species example curves also need the per-species predictions (see below).
+
+## Setup
+
+**Python 3.12** with an NVIDIA GPU for TabPFN, TabICL and fine-tuning. The analyses were run on an NVIDIA DGX Spark (GB10, CUDA 13).
+
+```bash
+conda create -n sdm-bench python=3.12
+conda activate sdm-bench
+pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cu130
+pip install -r requirements.txt
+```
+
+**R 4.5.2** with mgcv, glmnet, gbm, randomForest and maxnet, plus **Java ≥ 8** for MaxEnt:
+
+```bash
+Rscript R/install_packages.R
+```
+
+**Third-party code.** The R reference models use `gbm.step()` from dismo 1.3-14 (GPL ≥ 3), `make_quadratic()` from [rvalavi/myspatial](https://github.com/rvalavi/myspatial) and `maxent.jar` (MaxEnt 3.4.4), exactly as in Valavi et al. (2022). These are not redistributed here. The following script downloads them and checks them against the copies used in the paper:
+
+```bash
+bash R/third_party/fetch.sh
+```
+
+**TabPFN weights.** TabPFN 3.5 and 2.5 weights are released by Prior Labs under a non-commercial licence. On first use, the `tabpfn` package asks you to accept the licence in a browser and caches a token in `~/.cache/tabpfn/auth_token`; alternatively, set the environment variable `TABPFN_TOKEN`. Never commit this token.
+
+**Data.** All input data are public:
+
+```bash
+python get_data.py                   # NCEAS data (OSF kwc4v) and Valavi et al. (2023) blocks / TGB, about 0.6 GB
+python make_background.py            # 50,000 random background points per region
+```
+
+- `data/Records`, `data/Environment`: Elith J. et al. (2020) Presence-only and presence-absence data for comparing species distribution modeling methods. *Biodiversity Informatics* 15:69–80. <https://osf.io/kwc4v/>
+- `data/valavi2023`: spatial blocks and target-group background samples from <https://github.com/rvalavi/SDM-Spatial-Validation>
+
+## Reproducing the analyses
+
+```bash
+# 1. Benchmark under the protocol of Valavi et al. (2022)
+python run_valavi_r.py --workers 12                                   # R reference models
+python benchmark_v40_valavi.py --models XGBoost --tag cpu_xgb
+python benchmark_v40_valavi.py --models TabPFN3.5_Fast,TabPFN2.5_Fast,TabICL --tag gpu_fast
+python benchmark_v40_valavi.py --models TabPFN3.5_Stable --tag gpu_stable35
+python benchmark_v40_valavi.py --models TabPFN2.5_Stable --tag gpu_stable25
+
+# 2. Leave-one-region-out fine-tuning, then the fine-tuned model in the benchmark
+for R in AWT CAN NSW NZ SA SWI; do python finetune_sdm.py --holdout $R; done
+python benchmark_v40_valavi.py --models TabPFN3.5ft_Fast --tag gpu_ft_fast
+python benchmark_v40_valavi.py --models TabPFN3.5ft_Stable --tag gpu_ft_stable
+python make_ensembles.py
+
+# 3. Alternative fine-tuning strategies and the species-split control (optional)
+for R in AWT CAN NSW NZ SA SWI; do
+  python finetune_pa.py --holdout $R
+  python finetune_vs.py --holdout $R
+  python finetune_vs.py --holdout $R --mix
+  python finetune_vs.py --holdout $R --mix --tg
+done
+python nested_pa.py phaseA && python nested_pa.py phaseB && python nested_pa.py phaseC
+python ens_ft.py
+python finetune_species_split.py && python analyse_species_split.py
+
+# 4. Spatially separated evaluation (Valavi et al. 2023)
+python spatial_cv.py tasks && python spatial_cv.py r && python spatial_cv.py gpu
+
+# 5. Virtual species (additive: results/v60; complex: results/v61)
+for F in additive complex; do
+  for S in simulate r gpu analyse; do VS_FAMILY=$F python vs_benchmark.py $S; done
+done
+VS_FAMILY=additive python vs_benchmark.py gpu --bg-ratio 5 && python vs_bg5_summary.py
+
+# 6. Figures, tables and robustness analyses
+python make_main_figs.py
+python plot_v40.py
+python plot_v50.py
+python plot_ft_strategies.py
+python vs_figures.py
+python make_map_nz30.py --fit && python make_map_nz30.py --plot
+python robustness_1.py && python robustness_2.py && python robustness_3.py
+```
+
+Steps 3–5 use the leave-one-region-out checkpoints written by step 2 (`results/v40/finetune/tabpfn35_ft_<region>_e10_lr1e-05.ckpt`). The scripts are resumable: rerunning one skips the species that are already finished. TabPFN 3.5 "Fast" uses 5 balanced bags; "Stable" uses 100 bags with test-time augmentation. Fixed seeds are used throughout. Small numerical differences across GPUs and library versions are expected.
+
+## Per-species predictions
+
+The per-species predictions at the survey sites (`results/v40/preds`) and the virtual-species predictions (`results/v6*/preds`) are too large for the repository. They are attached to the GitHub release as `predictions_benchmark_v40.tar.gz` (87 MB) and `predictions_virtual_species.tar.gz` (156 MB, including the simulated landscapes). Extract them in the repository root, e.g. `tar -xzf predictions_benchmark_v40.tar.gz`. The fine-tuned TabPFN checkpoints are not distributed, because the TabPFN weights are under a non-commercial licence. They can be recreated with step 2.
+
+## Licence
+
+The code in this repository is released under the MIT licence (`LICENSE`). Third-party code fetched by `R/third_party/fetch.sh`, the TabPFN weights and the input data keep their own licences.
+
+## Citation
+
+Please cite the paper (citation to be added on publication), Valavi et al. (2022) for the benchmark protocol and Elith et al. (2020) for the data.

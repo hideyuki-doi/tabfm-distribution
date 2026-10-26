@@ -1,0 +1,32 @@
+# Input data (download with get_data.py; see README)
+data/
+
+# Large or regenerable outputs: per-species predictions, cached tasks, R job folders,
+# simulated landscapes, fine-tuned checkpoints, logs and figures
+results/**/preds/
+results/**/rjobs/
+results/**/data/
+results/**/*.pkl
+results/**/*.npz
+results/v40/finetune/*
+!results/v40/finetune/*_results.csv
+*.ckpt
+logs/
+figures/
+
+# Third-party code fetched by R/third_party/fetch.sh (not redistributed)
+R/third_party/*
+!R/third_party/fetch.sh
+!R/third_party/SHA256SUMS
+
+# Credentials (the TabPFN token lives in ~/.cache/tabpfn and must never be committed)
+auth_token
+*.token
+.env
+
+# Python / editors
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.DS_Store
+*.part

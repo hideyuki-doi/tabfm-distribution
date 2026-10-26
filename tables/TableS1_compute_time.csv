@@ -1,0 +1,17 @@
+Model,Hardware,Median_s_per_species,Mean_s_per_species,Max_s,Total_h_225_species
+MaxEnt,"CPU (R, 1 core)",19.5,18.3,36.0,1.1
+MaxNet,"CPU (R, 1 core)",24.2,66.8,1034.0,4.2
+Lasso,"CPU (R, 1 core)",50.8,99.5,1125.0,6.2
+GAM,"CPU (R, 1 core)",201.6,1172.2,113680.0,73.3
+BRT,"CPU (R, 1 core)",470.0,858.0,4665.0,53.6
+RF,"CPU (R, 1 core)",15.7,18.1,53.0,1.1
+RF down-sampled,"CPU (R, 1 core)",3.7,4.3,41.0,0.3
+XGBoost,CPU (16 threads),45.9,84.0,2160.0,5.2
+Ensemble,"CPU (R, 1 core)",948.4,2152.4,113946.0,134.5
+TabICL,GPU,0.7,2.0,6.0,0.1
+TabPFN2.5_Fast,GPU,4.1,10.1,47.0,0.6
+TabPFN2.5_Stable,GPU,80.6,338.6,1558.0,21.2
+TabPFN3.5_Fast,GPU,5.1,13.8,52.0,0.9
+TabPFN3.5_Stable,GPU,173.8,502.4,1776.0,31.4
+TabPFN3.5ft_Fast,GPU,3.8,11.9,44.0,0.7
+TabPFN3.5ft_Stable,GPU,111.6,442.3,1710.0,27.6

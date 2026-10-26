@@ -1,0 +1,6 @@
+comparator,slope_per_log10,se,P
+MaxEnt,-0.0012,0.007,0.8659
+MaxNet,0.003,0.0079,0.7026
+RF down-sampled,-0.0041,0.0053,0.434
+BRT,-0.0143,0.0063,0.0228
+Ensemble,-0.0059,0.0051,0.2511

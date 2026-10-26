@@ -1,0 +1,5 @@
+arm,mean_AUC,gain_vs_default,P_vs_default,species_improved
+pb_finetuned,0.7326,0.007,0.0026,129
+pa_finetuned,0.7274,0.0019,0.4187,117
+pb_species,0.7286,0.003,0.0725,120
+pa_species,0.7425,0.0169,0.0,148
