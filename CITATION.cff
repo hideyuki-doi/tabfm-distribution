@@ -1,0 +1,206 @@
+cff-version: 1.2.0
+message: "If you use this code or the result tables, please cite the paper below (preferred citation) and the works listed under references."
+title: "tabfm-distribution: code and results for evaluating tabular foundation models as presence-only distribution models"
+type: software
+authors:
+  - family-names: Doi
+    given-names: Hideyuki
+    affiliation: "Graduate School of Informatics, Kyoto University"
+  - family-names: Osawa
+    given-names: Takeshi
+    affiliation: "Graduate School of Urban Environmental Sciences, Tokyo Metropolitan University"
+  - family-names: Tsutsumida
+    given-names: Narumasa
+    affiliation: "Graduate School of Science & Engineering, Saitama University"
+repository-code: "https://github.com/hideyuki-doi/tabfm-distribution"
+license: MIT
+version: v1.0-submission
+date-released: "2026-10-26"
+keywords:
+  - species distribution model
+  - presence-only data
+  - tabular foundation model
+  - TabPFN
+  - TabICL
+  - MaxEnt
+  - benchmark
+preferred-citation:
+  type: unpublished
+  title: "Tabular foundation models for predicting distributions from presence-only species records"
+  authors:
+    - family-names: Doi
+      given-names: Hideyuki
+    - family-names: Osawa
+      given-names: Takeshi
+    - family-names: Tsutsumida
+      given-names: Narumasa
+  year: 2026
+  notes: "Submitted manuscript; this entry will be updated on publication."
+references:
+  - type: article
+    title: "Accurate predictions on small data with a tabular foundation model"
+    authors:
+      - family-names: Hollmann
+        given-names: Noah
+      - name: "others"
+    journal: Nature
+    volume: 637
+    start: 319
+    end: 326
+    year: 2025
+    doi: 10.1038/s41586-024-08328-6
+  - type: conference-paper
+    title: "Transformers can do Bayesian inference"
+    authors:
+      - family-names: Müller
+        given-names: Samuel
+      - family-names: Hollmann
+        given-names: Noah
+      - family-names: Pineda Arango
+        given-names: Sebastian
+      - family-names: Grabocka
+        given-names: Josif
+      - family-names: Hutter
+        given-names: Frank
+    collection-title: "International Conference on Learning Representations"
+    year: 2022
+    identifiers:
+      - type: other
+        value: "arXiv:2112.10510"
+  - type: report
+    title: "TabPFN-2.5: advancing the state of the art in tabular foundation models"
+    authors:
+      - family-names: Grinsztajn
+        given-names: Léo
+      - name: "others"
+    year: 2025
+    identifiers:
+      - type: other
+        value: "arXiv:2511.08667"
+  - type: report
+    title: "TabPFN-3.5: technical report"
+    authors:
+      - family-names: Jäger
+        given-names: Benjamin
+      - name: "others"
+    year: 2026
+    identifiers:
+      - type: other
+        value: "arXiv:2609.17895"
+  - type: conference-paper
+    title: "TabICL: a tabular foundation model for in-context learning on large data"
+    authors:
+      - family-names: Qu
+        given-names: Jingang
+      - family-names: Holzmüller
+        given-names: David
+      - family-names: Varoquaux
+        given-names: Gaël
+      - family-names: Le Morvan
+        given-names: Marine
+    collection-title: "Proceedings of the 42nd International Conference on Machine Learning"
+    volume: 267
+    start: 50817
+    end: 50847
+    year: 2025
+  - type: article
+    title: "Presence-only and presence-absence data for comparing species distribution modeling methods"
+    authors:
+      - family-names: Elith
+        given-names: Jane
+      - name: "others"
+    journal: "Biodiversity Informatics"
+    volume: 15
+    start: 69
+    end: 80
+    year: 2020
+    doi: 10.17161/bi.v15i2.13384
+  - type: article
+    title: "Novel methods improve prediction of species' distributions from occurrence data"
+    authors:
+      - family-names: Elith
+        given-names: Jane
+      - name: "others"
+    journal: Ecography
+    volume: 29
+    start: 129
+    end: 151
+    year: 2006
+    doi: 10.1111/j.2006.0906-7590.04596.x
+  - type: article
+    title: "Predictive performance of presence-only species distribution models: a benchmark study with reproducible code"
+    authors:
+      - family-names: Valavi
+        given-names: Roozbeh
+      - family-names: Guillera-Arroita
+        given-names: Gurutzeta
+      - family-names: Lahoz-Monfort
+        given-names: José J.
+      - family-names: Elith
+        given-names: Jane
+    journal: "Ecological Monographs"
+    volume: 92
+    start: e01486
+    year: 2022
+    doi: 10.1002/ecm.1486
+  - type: article
+    title: "Flexible species distribution modelling methods perform well on spatially separated testing data"
+    authors:
+      - family-names: Valavi
+        given-names: Roozbeh
+      - name: "others"
+    journal: "Global Ecology and Biogeography"
+    volume: 32
+    start: 369
+    end: 383
+    year: 2023
+    doi: 10.1111/geb.13639
+  - type: article
+    title: "Maximum entropy modeling of species geographic distributions"
+    authors:
+      - family-names: Phillips
+        given-names: Steven J.
+      - family-names: Anderson
+        given-names: Robert P.
+      - family-names: Schapire
+        given-names: Robert E.
+    journal: "Ecological Modelling"
+    volume: 190
+    start: 231
+    end: 259
+    year: 2006
+    doi: 10.1016/j.ecolmodel.2005.03.026
+  - type: article
+    title: "Opening the black box: an open-source release of Maxent"
+    authors:
+      - family-names: Phillips
+        given-names: Steven J.
+      - family-names: Anderson
+        given-names: Robert P.
+      - family-names: Dudík
+        given-names: Miroslav
+      - family-names: Schapire
+        given-names: Robert E.
+      - family-names: Blair
+        given-names: Mary E.
+    journal: Ecography
+    volume: 40
+    start: 887
+    end: 893
+    year: 2017
+    doi: 10.1111/ecog.03049
+  - type: article
+    title: "A working guide to boosted regression trees"
+    authors:
+      - family-names: Elith
+        given-names: Jane
+      - family-names: Leathwick
+        given-names: John R.
+      - family-names: Hastie
+        given-names: Trevor
+    journal: "Journal of Animal Ecology"
+    volume: 77
+    start: 802
+    end: 813
+    year: 2008
+    doi: 10.1111/j.1365-2656.2008.01390.x

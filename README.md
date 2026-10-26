@@ -1,8 +1,8 @@
-# Tabular foundation models for predicting distributions from presence-only records
+# Tabular foundation models for predicting distributions from presence-only species records
 
 Code and result tables for
 
-> Doi H, Osawa T, Tsutsumida N. *Tabular foundation models for predicting distributions from presence-only records: evidence from real and virtual species.* (in review)
+> Doi H, Osawa T, Tsutsumida N. *Tabular foundation models for predicting distributions from presence-only species records.* (submitted)
 
 The study evaluates the tabular foundation models TabPFN 3.5, TabPFN 2.5 and TabICL as presence-only distribution models. It uses the NCEAS benchmark (Elith et al. 2020): 225 species in six regions, evaluated on independent presence–absence surveys. The protocol follows Valavi et al. (2022, *Ecol. Monogr.* 92:e01486), so the results can be compared directly with their 21 modelling approaches. The study also covers:
 
@@ -124,8 +124,53 @@ The per-species predictions at the survey sites (`results/v40/preds`) and the vi
 
 ## Licence
 
-The code in this repository is released under the MIT licence (`LICENSE`). Third-party code fetched by `R/third_party/fetch.sh`, the TabPFN weights and the input data keep their own licences.
+| Component | Licence | In this repository? |
+|---|---|---|
+| Code (`*.py`, `R/*.R`, `R/third_party/fetch.sh`) | MIT (`LICENSE`) | yes |
+| Result tables (`results/`, `tables/`) and the prediction archives of the release | CC BY 4.0 | yes |
+| `reference/valavi2022_fig10_auc_by_region.csv` | values published by Valavi et al. (2022, Fig. 10); please cite them | yes |
+| NCEAS data (Elith et al. 2020, OSF kwc4v) | CC BY 4.0 | no; downloaded by `get_data.py` |
+| Spatial blocks and target-group background (Valavi et al. 2023) | no licence stated in the source repository | no; downloaded by `get_data.py` |
+| dismo 1.3-14 (`gbm.step` and helpers) | GPL (≥ 3) | no; downloaded by `R/third_party/fetch.sh` |
+| `make_quadratic()` (rvalavi/myspatial) | no licence stated in the source repository | no; downloaded by `R/third_party/fetch.sh` |
+| MaxEnt 3.4.4 (`maxent.jar`) | MIT | no; downloaded by `R/third_party/fetch.sh` |
+| `tabpfn` package | Apache 2.0 | no; installed with pip |
+| TabPFN 2.5 and 3.5 weights | Prior Labs TabPFN-2.5 / TabPFN-3.5 licences (non-commercial use) | no; downloaded by `tabpfn` after accepting the licence |
+| `tabicl` package and weights | BSD 3-Clause | no; installed with pip |
+
+Fine-tuned TabPFN checkpoints are derived from the TabPFN 3.5 weights and are not redistributed; step 2 recreates them. Using this code for commercial purposes requires a separate licence for the TabPFN weights from Prior Labs.
 
 ## Citation
 
-Please cite the paper (citation to be added on publication), Valavi et al. (2022) for the benchmark protocol and Elith et al. (2020) for the data.
+If you use this code or the result tables, please cite the paper. The citation will be updated on publication; GitHub's "Cite this repository" button uses `CITATION.cff`.
+
+> Doi H, Osawa T, Tsutsumida N. Tabular foundation models for predicting distributions from presence-only species records. (submitted)
+
+```bibtex
+@unpublished{doi_tabfm_sdm,
+  author = {Doi, Hideyuki and Osawa, Takeshi and Tsutsumida, Narumasa},
+  title  = {Tabular foundation models for predicting distributions from presence-only species records},
+  note   = {Submitted. Code: https://github.com/hideyuki-doi/tabfm-distribution},
+  year   = {2026}
+}
+```
+
+Please also cite the models, the data and the benchmark protocol that the analyses build on:
+
+**Tabular foundation models**
+- Hollmann N, et al. (2025) Accurate predictions on small data with a tabular foundation model. *Nature* 637:319–326. https://doi.org/10.1038/s41586-024-08328-6 (TabPFN)
+- Müller S, Hollmann N, Pineda Arango S, Grabocka J, Hutter F (2022) Transformers can do Bayesian inference. *International Conference on Learning Representations*. arXiv:2112.10510 (prior-data fitted networks)
+- Grinsztajn L, et al. (2025) TabPFN-2.5: advancing the state of the art in tabular foundation models. arXiv:2511.08667
+- Jäger B, et al. (2026) TabPFN-3.5: technical report. arXiv:2609.17895
+- Qu J, Holzmüller D, Varoquaux G, Le Morvan M (2025) TabICL: a tabular foundation model for in-context learning on large data. *Proceedings of the 42nd International Conference on Machine Learning*, PMLR 267:50817–50847
+
+**Data and benchmark protocol**
+- Elith J, et al. (2020) Presence-only and presence-absence data for comparing species distribution modeling methods. *Biodiversity Informatics* 15:69–80. https://doi.org/10.17161/bi.v15i2.13384 (NCEAS data)
+- Elith J, et al. (2006) Novel methods improve prediction of species' distributions from occurrence data. *Ecography* 29:129–151. https://doi.org/10.1111/j.2006.0906-7590.04596.x
+- Valavi R, Guillera-Arroita G, Lahoz-Monfort JJ, Elith J (2022) Predictive performance of presence-only species distribution models: a benchmark study with reproducible code. *Ecological Monographs* 92:e01486. https://doi.org/10.1002/ecm.1486
+- Valavi R, et al. (2023) Flexible species distribution modelling methods perform well on spatially separated testing data. *Global Ecology and Biogeography* 32:369–383. https://doi.org/10.1111/geb.13639 (spatial blocks and target-group background)
+
+**Reference models**
+- Phillips SJ, Anderson RP, Schapire RE (2006) Maximum entropy modeling of species geographic distributions. *Ecological Modelling* 190:231–259. https://doi.org/10.1016/j.ecolmodel.2005.03.026 (MaxEnt)
+- Phillips SJ, Anderson RP, Dudík M, Schapire RE, Blair ME (2017) Opening the black box: an open-source release of Maxent. *Ecography* 40:887–893. https://doi.org/10.1111/ecog.03049 (MaxNet)
+- Elith J, Leathwick JR, Hastie T (2008) A working guide to boosted regression trees. *Journal of Animal Ecology* 77:802–813. https://doi.org/10.1111/j.1365-2656.2008.01390.x (BRT, `gbm.step`)
