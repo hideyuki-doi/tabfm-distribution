@@ -10,7 +10,7 @@ from scipy.stats import wilcoxon
 import plot_v40 as P
 import valavi_stats as VS
 import make_main_figs as M
-from valavi_config import HERE, DATA_DIR
+from valavi_config import DATA_DIR, HERE, REGIONS
 
 df = P.load(0.9)
 auc = P.pivot(df, "AUC")
@@ -60,6 +60,6 @@ sp = d.groupby(["cv", "Region", "Species", "Model"]).AUC.mean().unstack("Model")
 e = (sp["TabPFN3.5ft_Fast"] - sp["TabPFN3.5_Fast"]).groupby(level=["cv", "Region"]).mean().unstack("Region").round(4)
 print("(e) FT - default under CV designs (TGB background):\n", e)
 # (f) 226 vs 225 species
-po = pd.concat([pd.read_csv(f) for f in glob.glob(os.path.join(DATA_DIR, "train_po", "*train_po.csv"))])
+po = pd.concat([pd.read_csv(os.path.join(DATA_DIR, "train_po", f"{r}train_po.csv")) for r in REGIONS])
 allsp = set(po.spid.unique()); used = set(auc.index.get_level_values(1))
 print("(f) species in PO data not used:", sorted(allsp - used), "| n PO species", len(allsp))
