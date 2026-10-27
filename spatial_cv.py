@@ -20,6 +20,7 @@ import pickle
 import shutil
 import subprocess
 import time
+import zlib
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import numpy as np
@@ -191,7 +192,8 @@ def run_gpu():
         for model, ckpt, cat in [("TabPFN3.5_Fast", None, P.cat_idx),
                                  ("TabPFN3.5ft_Fast", B.FT_CKPT.format(region=t["region"]), None)]:
             t0 = time.time()
-            rng = np.random.default_rng([B.SEED, REGIONS.index(t["region"]), t["fold"], hash(t["species"]) % 10_000])
+            # species seed from crc32, which is stable across processes (str hash() is salted per process)
+            rng = np.random.default_rng([B.SEED, REGIONS.index(t["region"]), t["fold"], zlib.crc32(t["species"].encode()) % 10_000])
             logits = []
             for _ in range(5):
                 ip = rng.choice(n_p, n_p, replace=True)
