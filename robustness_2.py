@@ -56,8 +56,9 @@ for (r, sp) in auc.index:
 print("(d) calibration slope median:", pd.DataFrame(rows).groupby("m").slope.median().round(3).to_dict())
 # (e) spatial CV: FT - default by region and design
 d = pd.concat([pd.read_csv(os.path.join(HERE, "results", "v50", f"results_{x}.csv")) for x in ("gpu",)])
+d = d.drop_duplicates(["Region", "Species", "cv", "fold", "Model"], keep="last")
 sp = d.groupby(["cv", "Region", "Species", "Model"]).AUC.mean().unstack("Model")
-e = (sp["TabPFN3.5ft_Fast"] - sp["TabPFN3.5_Fast"]).groupby(level=["cv", "Region"]).mean().unstack("Region").round(4)
+e = (sp["TabPFN3.5ft"] - sp["TabPFN3.5"]).groupby(level=["cv", "Region"]).mean().unstack("Region").round(4)
 print("(e) FT - default under CV designs (TGB background):\n", e)
 # (f) 226 vs 225 species
 po = pd.concat([pd.read_csv(os.path.join(DATA_DIR, "train_po", f"{r}train_po.csv")) for r in REGIONS])

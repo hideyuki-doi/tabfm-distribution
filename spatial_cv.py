@@ -13,7 +13,7 @@
 # Usage:
 #   python spatial_cv.py tasks            # build and cache the fold tasks
 #   python spatial_cv.py r [--workers 14] # reference models in R (R/valavi_models.R)
-#   python spatial_cv.py gpu              # TabPFN 3.5 (default and fine-tuned), Fast
+#   python spatial_cv.py gpu              # TabPFN 3.5 (default and fine-tuned), 20 balanced bags
 import argparse
 import os
 import pickle
@@ -31,6 +31,7 @@ from valavi_config import CATEGORICAL, DATA_DIR, HERE, REGIONS, VARS
 
 V23 = os.path.join(HERE, "data", "valavi2023")
 OUT = os.path.join(HERE, "results", "v50")
+BAGS = 20  # balanced bags per fold for TabPFN (as for the virtual species)
 TASKS = os.path.join(OUT, "tasks.pkl")
 R_MODELS = ["GAM", "Lasso", "BRT", "RF", "RFdown", "MaxNet", "MaxEnt", "Ensemble"]
 # Valavi et al. (2023) omitted vegsys in NSW (R/nceas_model_vars.R)
@@ -122,6 +123,12 @@ def build_tasks():
     pd.DataFrame(skipped, columns=["Region", "Species"]).to_csv(os.path.join(OUT, "skipped_species.csv"), index=False)
 
 
+def load_results(kind):
+    """results_r.csv or results_gpu.csv, keeping the last row of each fold task and model."""
+    d = pd.read_csv(os.path.join(OUT, f"results_{kind}.csv"))
+    return d.drop_duplicates(["Region", "Species", "cv", "fold", "Model"], keep="last")
+
+
 def load_tasks():
     with open(TASKS, "rb") as fh:
         return pickle.load(fh)
@@ -138,8 +145,11 @@ def run_r(workers):
     out = os.path.join(OUT, "results_r.csv")
     done = set()
     if os.path.exists(out):
-        prev = pd.read_csv(out)
-        done = set(zip(prev.Region, prev.Species, prev.cv, prev.fold))
+        # a fold task is done only if every model has an AUC; failed tasks are re-run and their new rows
+        # supersede the old ones (see load_results)
+        prev = load_results("r")
+        ok = prev.groupby(["Region", "Species", "cv", "fold"]).AUC.apply(lambda a: a.notna().all())
+        done = set(ok[ok].index)
     tasks = [t for t in load_tasks() if (t["region"], t["species"], t["cv"], t["fold"]) not in done]
     print(f"R: {len(tasks)} fold tasks, {workers} workers", flush=True)
 
@@ -189,13 +199,13 @@ def run_gpu():
         Xp, Xb = X[y == 1], X[y == 0]
         n_p = len(Xp)
         rows = []
-        for model, ckpt, cat in [("TabPFN3.5_Fast", None, P.cat_idx),
-                                 ("TabPFN3.5ft_Fast", B.FT_CKPT.format(region=t["region"]), None)]:
+        for model, ckpt, cat in [("TabPFN3.5", None, P.cat_idx),
+                                 ("TabPFN3.5ft", B.FT_CKPT.format(region=t["region"]), None)]:
             t0 = time.time()
             # species seed from crc32, which is stable across processes (str hash() is salted per process)
             rng = np.random.default_rng([B.SEED, REGIONS.index(t["region"]), t["fold"], zlib.crc32(t["species"].encode()) % 10_000])
             logits = []
-            for _ in range(5):
+            for _ in range(BAGS):
                 ip = rng.choice(n_p, n_p, replace=True)
                 ib = rng.choice(len(Xb), n_p, replace=n_p > len(Xb))
                 kw = dict(device="cuda", random_state=int(rng.integers(1 << 31)),

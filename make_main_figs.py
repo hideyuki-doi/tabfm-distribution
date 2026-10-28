@@ -19,7 +19,8 @@ SINGLE = ["GAM", "Lasso", "MaxNet", "MaxEnt", "BRT", "RF", "RF down-sampled", "X
           "TabICL", "TabPFN2.5_Stable", TP, FT]
 MODELS = SINGLE + ["Ensemble"]
 LAB = {TP: "TabPFN 3.5", FT: "TabPFN 3.5-FT", "TabPFN2.5_Stable": "TabPFN 2.5",
-       "TabPFN3.5_Fast": "TabPFN 3.5", "TabPFN3.5ft_Fast": "TabPFN 3.5-FT"}
+       "TabPFN3.5_Fast": "TabPFN 3.5", "TabPFN3.5ft_Fast": "TabPFN 3.5-FT",
+       "TabPFN3.5": "TabPFN 3.5", "TabPFN3.5ft": "TabPFN 3.5-FT"}
 C_FT, C_TP, C_REF, C_ENS = "#d1495b", "#edae49", "#5b6770", "#9aa5b1"
 
 
@@ -28,7 +29,7 @@ def lab(m):
 
 
 def colour(m):
-    return {FT: C_FT, TP: C_TP, "TabPFN3.5ft_Fast": C_FT, "TabPFN3.5_Fast": C_TP,
+    return {FT: C_FT, TP: C_TP, "TabPFN3.5ft_Fast": C_FT, "TabPFN3.5_Fast": C_TP, "TabPFN3.5ft": C_FT, "TabPFN3.5": C_TP,
             "Ensemble": C_ENS}.get(m, C_REF)
 
 
@@ -259,6 +260,7 @@ def fig3(auc):
 def fig5():
     """Spatial-block vs random CV (SI). The two designs are offset vertically so their error bars do not overlap."""
     d = pd.concat([pd.read_csv(os.path.join(HERE, "results", "v50", f"results_{f}.csv")) for f in ("r", "gpu")])
+    d = d.drop_duplicates(["Region", "Species", "cv", "fold", "Model"], keep="last")
     sp = d.groupby(["cv", "Region", "Species", "Model"]).AUC.mean().reset_index()
     stat = sp.groupby(["Model", "cv"]).AUC.agg(["mean", "sem"]).unstack("cv")
     order = stat[("mean", "spatial")].sort_values().index

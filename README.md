@@ -26,12 +26,14 @@ The study evaluates the tabular foundation models TabPFN 3.5, TabPFN 2.5 and Tab
 | Species-split control | `finetune_species_split.py`, `analyse_species_split.py` | `results/v40/finetune/finetune_species_split_results.csv`, `results/v40/review/species_split_*.csv` | Leakage test |
 | Spatial evaluation | `spatial_cv.py`, `plot_v50.py` | `results/v50/results_{r,gpu}.csv` | Spatial-CV figure (SI) |
 | Virtual species | `vs_benchmark.py`, `vs_bg5_summary.py`, `vs_figures.py` | `results/v60` (additive), `results/v61` (complex) | Virtual-species figure, SI |
+| Virtual-species tests | `vs_tests.py` | `results/v6x/tests_species.csv` | Species-level tests quoted in the paper |
 | Main figures | `make_main_figs.py` | `figures/main`, `figures/supp` | Figs 1, 2 and 4; calibration, species-level and spatial-CV SI figures |
 | Benchmark figures | `plot_v40.py`, `plot_ft_strategies.py` | `figures/v40` | Replication check, ranks, post hoc P values and other SI figures |
 | Map | `make_map_nz30.py` | `figures/v40` | New Zealand map (SI) |
 | Robustness analyses | `robustness_1.py`, `robustness_2.py`, `robustness_3.py` | `results/v40/review/*.csv`, `results/v60/envelope.csv` | Bootstrap and mixed-model uncertainty, calibration slopes, categorical coding, sample size, envelope analysis |
 | Published values | `reference/valavi2022_fig10_auc_by_region.csv` | | Regional AUC of Valavi et al. (2022, Fig. 10) |
 | Compute time, strategies | `tables/` | | SI tables |
+| Maintenance | `regen_r_preds.py` | `results/v40/preds/*_r.npz` | Re-saves R predictions at full precision (see Per-species predictions) |
 
 `results/` holds the per-species result tables for every model and analysis in the paper. With these tables, `make_main_figs.py`, `plot_v40.py`, `plot_v50.py`, `plot_ft_strategies.py` and `analyse_species_split.py` run without a GPU or the input data. The calibration slopes, the robustness analyses and the virtual-species example curves also need the per-species predictions (see below).
 
@@ -104,7 +106,10 @@ python spatial_cv.py tasks && python spatial_cv.py r && python spatial_cv.py gpu
 for F in additive complex; do
   for S in simulate r gpu analyse; do VS_FAMILY=$F python vs_benchmark.py $S; done
 done
-VS_FAMILY=additive python vs_benchmark.py gpu --bg-ratio 5 && python vs_bg5_summary.py
+VS_FAMILY=additive python vs_benchmark.py gpu --bg-ratio 5    # 5x background per bag, n = 10 and 30
+VS_FAMILY=additive python vs_benchmark.py analyse             # adds these runs to results/v60/results.csv
+python vs_bg5_summary.py
+python vs_tests.py                                            # species-level tests quoted in the paper
 
 # 6. Figures, tables and robustness analyses
 python make_main_figs.py
@@ -116,11 +121,20 @@ python make_map_nz30.py --fit && python make_map_nz30.py --plot
 python robustness_1.py && python robustness_2.py && python robustness_3.py
 ```
 
-Steps 3–5 use the leave-one-region-out checkpoints written by step 2 (`results/v40/finetune/tabpfn35_ft_<region>_e10_lr1e-05.ckpt`). The scripts are resumable: rerunning one skips the species that are already finished. TabPFN 3.5 "Fast" uses 5 balanced bags; "Stable" uses 100 bags with test-time augmentation. Fixed seeds are used throughout. Small numerical differences across GPUs and library versions are expected.
+Steps 3–5 use the leave-one-region-out checkpoints written by step 2 (`results/v40/finetune/tabpfn35_ft_<region>_e10_lr1e-05.ckpt`). TabPFN 3.5 "Fast" uses 5 balanced bags and "Stable" 100 bags with test-time augmentation; the spatially separated evaluation and the virtual species use 20 bags.
+
+- **Random streams.** Fixed seeds are used throughout. In `benchmark_v40_valavi.py`, the TabPFN and TabICL models of one call draw their bags from one random stream per species, in the order given by `--models`. The reported values come from the calls listed above, and rerunning the same calls reproduces them exactly; running a model in a different call gives statistically equivalent but not identical values.
+- **Resuming and failed fits.** Rerunning a script skips finished work. A fit that failed (no AUC, or a prediction file without every model) does not count as finished and is re-run; the new rows supersede the old ones (`run_valavi_r.py --keep-failed` disables this for the R models). A species that is only partly finished is re-run with the whole model list, so that every model receives the same random draws as in a complete run.
+- **Statistics on virtual species.** The four sample sizes of a species are not independent, so tests pooled over sample sizes average the paired differences within each species and test them across species (`vs_tests.py`).
+- **GPU fine-tuning** is not bitwise reproducible (non-deterministic CUDA kernels in backpropagation). Predictions from a given checkpoint are.
+
+## Reproducibility check
+
+The repository was checked by cloning it into a fresh environment built from `requirements.txt`, downloading the data with `get_data.py` and rerunning subsets of every analysis. The downloaded data, the background points, the simulated virtual species and the spatial folds were byte-identical to those used in the paper. Reruns of the R reference models, XGBoost, TabPFN 3.5 and 2.5 (5 and 100 bags) and TabICL reproduced the reported per-species metrics exactly, as did all summary tables and the analyses based on the released predictions. Fine-tuning reproduced the regional mean AUC to the fourth decimal (per-species differences up to 0.004; see GPU fine-tuning above).
 
 ## Per-species predictions
 
-The per-species predictions at the survey sites (`results/v40/preds`) and the virtual-species predictions (`results/v6*/preds`) are too large for the repository. They are attached to the GitHub release as `predictions_benchmark_v40.tar.gz` (87 MB) and `predictions_virtual_species.tar.gz` (156 MB, including the simulated landscapes). Extract them in the repository root, e.g. `tar -xzf predictions_benchmark_v40.tar.gz`. The fine-tuned TabPFN checkpoints are not distributed, because the TabPFN weights are under a non-commercial licence. They can be recreated with step 2.
+The per-species predictions at the survey sites (`results/v40/preds`) and the virtual-species predictions (`results/v6*/preds`) are too large for the repository. They are attached to the GitHub release as `predictions_benchmark_v40.tar.gz` and `predictions_virtual_species.tar.gz` (including the simulated landscapes). Extract them in the repository root, e.g. `tar -xzf predictions_benchmark_v40.tar.gz`. Metrics recomputed from the benchmark predictions agree with the reported values to within 10<sup>-6</sup>. In release v1.0 the R predictions were stored as float32, which tied some near-0 or near-1 predictions and shifted AP and AUC<sub>PRG</sub> recomputed from the files by up to 0.008 (reported values were computed at full precision); from v1.1 the affected files are re-saved at full precision (`regen_r_preds.py`), and all scripts save predictions at full precision. The virtual-species metrics are computed from the saved predictions themselves. The fine-tuned TabPFN checkpoints are not distributed, because the TabPFN weights are under a non-commercial licence. They can be recreated with step 2.
 
 ## Licence
 

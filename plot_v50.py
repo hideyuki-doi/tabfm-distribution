@@ -10,12 +10,13 @@ import plot_v40 as P
 from valavi_config import HERE
 
 RES = os.path.join(HERE, "results", "v50")
-LAB = {"TabPFN3.5_Fast": "TabPFN 3.5", "TabPFN3.5ft_Fast": "TabPFN 3.5-FT"}
+LAB = {"TabPFN3.5": "TabPFN 3.5", "TabPFN3.5ft": "TabPFN 3.5-FT"}
 
 
 def main():
     P.style()
     d = pd.concat([pd.read_csv(os.path.join(RES, f"results_{f}.csv")) for f in ("r", "gpu")])
+    d = d.drop_duplicates(["Region", "Species", "cv", "fold", "Model"], keep="last")
     sp = d.groupby(["cv", "Region", "Species", "Model"]).AUC.mean().reset_index()
     stat = sp.groupby(["Model", "cv"]).AUC.agg(["mean", "sem"]).unstack("cv")
     order = stat[("mean", "spatial")].sort_values().index
