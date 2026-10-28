@@ -70,14 +70,16 @@ for sid, m in meta.items():
     rows.append({"sid": sid, "corr": c})
 B = pd.DataFrame(rows).set_index("sid")
 piv = res[res.biased].pivot_table(index=["sid", "n"], columns="Model", values="curve_r")
-dd = (piv["TabPFN3.5ft"] - piv["MaxEnt"]).rename("d").reset_index()
+# one value per species (mean over the four sample sizes), so species are the units of replication
+dd = (piv["TabPFN3.5ft"] - piv["MaxEnt"]).groupby(level="sid").mean().rename("d").reset_index()
 dd["corr"] = dd.sid.map(B["corr"])
-f = smf.ols("d ~ corr + np.log10(n)", dd).fit()
+f = smf.ols("d ~ corr", dd).fit()
 print("(b) biased species: FT-MaxEnt curve deficit vs max |corr(bias var, niche var)|: slope",
       round(f.params["corr"], 3), "P", round(f.pvalues["corr"], 4), "| corr range", B["corr"].round(2).describe()[["min", "50%", "max"]].to_dict())
 piv2 = res[res.biased].pivot_table(index=["sid", "n"], columns="Model", values="spearman")
-dd2 = (piv2["TabPFN3.5ft"] - piv2["MaxEnt"]).rename("d").reset_index(); dd2["corr"] = dd2.sid.map(B["corr"])
-f2 = smf.ols("d ~ corr + np.log10(n)", dd2).fit()
+dd2 = (piv2["TabPFN3.5ft"] - piv2["MaxEnt"]).groupby(level="sid").mean().rename("d").reset_index()
+dd2["corr"] = dd2.sid.map(B["corr"])
+f2 = smf.ols("d ~ corr", dd2).fit()
 print("    same for Spearman: slope", round(f2.params["corr"], 3), "P", round(f2.pvalues["corr"], 4))
 
 # (c) calibration slope against true presence/absence in virtual species

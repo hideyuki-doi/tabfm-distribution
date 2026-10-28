@@ -36,6 +36,8 @@ def summary(df, out):
             p = piv if n == "all" else piv.xs(n, level="n")
             for m in [c for c in p.columns if c not in ("TabPFN3.5ft", "Truth")]:
                 d = (p["TabPFN3.5ft"] - p[m]).dropna()
+                if n == "all":  # the four sample sizes of a species are not independent: test species means
+                    d = d.groupby(level="sid").mean()
                 tests.append({"metric": met, "n": n, "vs": m, "diff": d.mean(), "wins": int((d > 0).sum()),
                               "N": len(d), "P": wilcoxon(d).pvalue if (d != 0).any() else 1.0})
     s, t = pd.DataFrame(rows), pd.DataFrame(tests)
