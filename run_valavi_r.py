@@ -41,7 +41,7 @@ def run_species(d, models):
         rows.append({"Model": NAMES.get(m, m), **B.calc_metrics(d["y_test"], p),
                      "Time": float(times.get(m, np.nan)), "Error": err})
         if p is not None:
-            keep[NAMES.get(m, m)] = p.astype(np.float32)
+            keep[NAMES.get(m, m)] = p  # full precision (see benchmark_v40_valavi.run_models)
     np.savez_compressed(os.path.join(B.PRED_DIR, f"{d['region']}_{d['species']}_r.npz"),
                         y_test=d["y_test"].astype(np.int8), **keep)
     for r_ in rows:
@@ -58,8 +58,8 @@ def main():
     ap.add_argument("--regions", default=",".join(REGIONS))
     ap.add_argument("--models", default=",".join(R_MODELS))
     ap.add_argument("--max-species", type=int, default=0)
-    ap.add_argument("--redo-failed", action="store_true",
-                    help="re-run species with any missing model (new rows supersede old ones)")
+    ap.add_argument("--keep-failed", action="store_true",
+                    help="do not re-run species with a failed model (by default they are re-run; new rows supersede old ones)")
     args = ap.parse_args()
     os.makedirs(B.PRED_DIR, exist_ok=True)
     models = args.models.split(",")
@@ -68,7 +68,7 @@ def main():
     if os.path.exists(OUT):
         prev = pd.read_csv(OUT).drop_duplicates(["Region", "Species", "Model"], keep="last")
         done = set(zip(prev.Region, prev.Species))
-        if args.redo_failed:
+        if not args.keep_failed:
             bad = prev[prev.AUC.isna()]
             done -= set(zip(bad.Region, bad.Species))
     jobs = []

@@ -340,7 +340,7 @@ def run_models(d, models, rng, region):
                 p = np.mean([(q - q.min()) / (np.ptp(q) or 1) for q in parts], axis=0)
             else:
                 p = np.asarray(runners[name](), dtype=float)
-            preds[name] = p.astype(np.float32)
+            preds[name] = p  # full precision, so metrics recomputed from saved predictions match exactly
         except Exception as e:
             print(f"  [{d['region']}/{d['species']}] {name} error: {e!r}")
             traceback.print_exc()
@@ -377,7 +377,9 @@ def main():
 
     done = set()
     if os.path.exists(out):
-        prev = pd.read_csv(out)
+        # later rows supersede earlier ones; failed fits (no AUC) are not counted as done and are retried
+        prev = pd.read_csv(out).drop_duplicates(["Region", "Species", "Model"], keep="last")
+        prev = prev[prev["AUC"].notna()]
         done = set(zip(prev["Region"], prev["Species"], prev["Model"]))
         print(f"resume: {len(done)} rows done")
 
@@ -390,6 +392,9 @@ def main():
             todo = [m for m in models if (region, d["species"], m) not in done]
             if not todo:
                 continue
+            # the models of one call draw from one random stream in the order given, so a species that is only
+            # partly done is re-run with the whole model list to give every model the same draws as before
+            todo = models
             rng = np.random.default_rng([SEED, REGIONS.index(region), i])
             t0 = time.time()
             rows = run_models(d, todo, rng, region)

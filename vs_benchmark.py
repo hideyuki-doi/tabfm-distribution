@@ -227,7 +227,7 @@ R_MODELS = ["GAM", "Lasso", "BRT", "RF", "RFdown", "MaxNet", "MaxEnt", "Ensemble
 def run_r(job):
     sid, n = job
     out = os.path.join(OUT, "preds", f"{sid}_n{n}_r.npz")
-    if os.path.exists(out):
+    if os.path.exists(out) and set(R_MODELS) <= set(np.load(out).files):
         return job, 0.0, "cached"
     d = load(sid, n)
     jd = os.path.join(OUT, "rjobs", f"{sid}_n{n}")
@@ -281,33 +281,35 @@ def stage_gpu(reverse=False):
         if os.path.exists(out) or os.path.exists(out + ".lock"):
             continue
         open(out + ".lock", "w").close()
-        t0 = time.time()
-        d = load(sid, n)
-        r = d["region"]
-        train = pd.concat([d["pres"], d["bg"]], ignore_index=True)
-        P = B.Prep(train, r)
-        Xp, Xb, Xt = P.coded(d["pres"]), P.coded(d["bg"]), P.coded(d["test"])
-        res = {}
-        arms = (("TabPFN3.5", None, P.cat_idx), ("TabPFN3.5ft", B.FT_CKPT.format(region=r), None))
-        if BG_RATIO != 1:  # sensitivity analysis: more background points per bag, fine-tuned model only
-            arms = ((f"TabPFN3.5ft_bg{BG_RATIO}", B.FT_CKPT.format(region=r), None),)
-        for name, ckpt, cats in arms:
-            rng = np.random.default_rng([SEED, REGIONS.index(r), int(sid[-2:]), n])
-            logits = []
-            for _ in range(BAGS):
-                ip = rng.choice(n, n, replace=True)
-                ib = rng.choice(len(Xb), n * BG_RATIO, replace=True)
-                X = np.vstack([Xp[ip], Xb[ib]])
-                y = np.r_[np.ones(n), np.zeros(n * BG_RATIO)]
-                tf = B.make_tabpfn("v3.5", int(rng.integers(1 << 31)), cats, ckpt).fit(X, y)
-                logits.append(logit(np.clip(tf.predict_proba(Xt)[:, 1], 1e-6, 1 - 1e-6)))
-                torch.cuda.empty_cache()
-            L = np.array(logits)
-            if BG_RATIO == 1:
-                res[name + "_Fast"] = expit(L[:5].mean(0)).astype(np.float32)
-            res[name] = expit(L.mean(0)).astype(np.float32)
-        np.savez_compressed(out, **res)
-        os.remove(out + ".lock")
+        try:
+            t0 = time.time()
+            d = load(sid, n)
+            r = d["region"]
+            train = pd.concat([d["pres"], d["bg"]], ignore_index=True)
+            P = B.Prep(train, r)
+            Xp, Xb, Xt = P.coded(d["pres"]), P.coded(d["bg"]), P.coded(d["test"])
+            res = {}
+            arms = (("TabPFN3.5", None, P.cat_idx), ("TabPFN3.5ft", B.FT_CKPT.format(region=r), None))
+            if BG_RATIO != 1:  # sensitivity analysis: more background points per bag, fine-tuned model only
+                arms = ((f"TabPFN3.5ft_bg{BG_RATIO}", B.FT_CKPT.format(region=r), None),)
+            for name, ckpt, cats in arms:
+                rng = np.random.default_rng([SEED, REGIONS.index(r), int(sid[-2:]), n])
+                logits = []
+                for _ in range(BAGS):
+                    ip = rng.choice(n, n, replace=True)
+                    ib = rng.choice(len(Xb), n * BG_RATIO, replace=True)
+                    X = np.vstack([Xp[ip], Xb[ib]])
+                    y = np.r_[np.ones(n), np.zeros(n * BG_RATIO)]
+                    tf = B.make_tabpfn("v3.5", int(rng.integers(1 << 31)), cats, ckpt).fit(X, y)
+                    logits.append(logit(np.clip(tf.predict_proba(Xt)[:, 1], 1e-6, 1 - 1e-6)))
+                    torch.cuda.empty_cache()
+                L = np.array(logits)
+                if BG_RATIO == 1:
+                    res[name + "_Fast"] = expit(L[:5].mean(0)).astype(np.float32)
+                res[name] = expit(L.mean(0)).astype(np.float32)
+            np.savez_compressed(out, **res)
+        finally:
+            os.remove(out + ".lock")  # also after a failure, so the job is retried
         print(f"[GPU {i + 1}/{len(js)}] {sid} n={n} {time.time() - t0:.0f} s", flush=True)
     print("ALLDONE", flush=True)
 

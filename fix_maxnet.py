@@ -23,7 +23,7 @@ def run(region, sp):
            "Group": d["group"], "n_pres": len(d["pres"]), "n_test": len(d["y_test"]), "prevalence": float(d["y_test"].mean())}
     if p is not None:
         f = os.path.join(B.PRED_DIR, f"{region}_{sp}_r.npz")
-        z = dict(np.load(f)); z["MaxNet"] = p.astype(np.float32); np.savez_compressed(f, **z)
+        z = dict(np.load(f)); z["MaxNet"] = p; np.savez_compressed(f, **z)
     print(region, sp, row["AUC"], (r.stderr.strip().splitlines() or [""])[-3:], flush=True)
     return row
 
