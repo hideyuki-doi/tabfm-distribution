@@ -147,8 +147,12 @@ fit_rfdown <- function() {
   predict(rf, testing_n, type = "prob")[, "1"]
 }
 
-# maxnet::maxnet (0.1.4) with one change: if glmnet stops before the end of the 200-lambda
-# path (non-convergence at the smallest lambdas), use the last lambda it reached instead of failing
+# maxnet::maxnet (0.1.4) with two changes: (1) if glmnet stops before the end of the 200-lambda
+# path (non-convergence at the smallest lambdas), use the last lambda it reached instead of failing;
+# (2) features with identical names are merged by adding their coefficients. For a covariate with few
+# distinct values, the forward hinge at the minimum and the reverse hinge at the maximum are the same
+# feature with the same name, and maxnet's predict() then fails with 'non-conformable arguments'.
+# Merging leaves the linear predictor, and so the model, unchanged.
 maxnet_partial <- function(p, data, f, regmult = 1, regfun = maxnet::maxnet.default.regularization) {
   pdata <- data[p == 1, ]; ndata <- data[p == 0, ]
   toadd <- apply(pdata, 1, function(rr) !any(apply(ndata, 1, function(r) identical(r, rr))))
@@ -164,7 +168,10 @@ maxnet_partial <- function(p, data, f, regmult = 1, regfun = maxnet::maxnet.defa
   k <- length(model$lambda)
   message("maxnet_partial: path stopped at lambda ", k, "/200")
   bb <- model$beta[, k]
-  model$betas <- bb[bb != 0]
+  bb <- bb[bb != 0]
+  model$betas <- vapply(split(bb, factor(names(bb), levels = unique(names(bb)))), sum, numeric(1))
+  if (anyDuplicated(names(bb))) message("maxnet_partial: merged duplicated features ",
+                                       paste(unique(names(bb)[duplicated(names(bb))]), collapse = ", "))
   model$alpha <- 0
   rr <- maxnet:::predict.maxnet(model, data[p == 0, , drop = FALSE], type = "exponent", clamp = F)
   raw <- rr / sum(rr)
@@ -199,7 +206,7 @@ fit_maxnet <- function() {
                                    maxnet.formula(training$occ, covariates, classes = "default"),
                                    thresh = 1e-5), error = function(e2) NULL)
       if (!is.null(m)) return(m)
-      message("MaxNet: using the smallest lambda glmnet reached (partial path)")
+      message("MaxNet: refitting with maxnet_partial (partial path / merged duplicate features)")
       maxnet_partial(p = training$occ, data = covariates, regmult = 1,
                      f = maxnet.formula(training$occ, covariates, classes = "default"))
     })
