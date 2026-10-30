@@ -152,6 +152,8 @@ The per-species predictions at the survey sites (`results/v40/preds`) and the vi
 | TabPFN 2.5 and 3.5 weights | Prior Labs TabPFN-2.5 / TabPFN-3.5 licences (non-commercial use) | no; downloaded by `tabpfn` after accepting the licence |
 | `tabicl` package and weights | BSD 3-Clause | no; installed with pip |
 
+The developer and licence of every component, including which are of US origin and which are not open source, are listed in [docs/software_origin.md](docs/software_origin.md) (Japanese; PDF in `docs/software_origin.pdf`).
+
 Fine-tuned TabPFN checkpoints are derived from the TabPFN 3.5 weights and are not redistributed; step 2 recreates them. Using this code for commercial purposes requires a separate licence for the TabPFN weights from Prior Labs.
 
 ## Citation
